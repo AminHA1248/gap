@@ -13,6 +13,7 @@ import os
 from pyagender import PyAgender
 from gap_db import Gap_Db
 import imutils
+import time
 
 
 #%%============================================================================
@@ -68,7 +69,7 @@ class Image_Utils():
 
 class FaceAligner:
     def __init__(self, desiredLeftEye=(0.35, 0.35),
-        desiredFaceWidth=256, desiredFaceHeight=317):
+        desiredFaceWidth=256, desiredFaceHeight=None):
         # store desired output left
         # eye position, and desired output face width + height
         self.desiredLeftEye = desiredLeftEye
@@ -131,33 +132,15 @@ class FaceAligner:
         return faces_aligned
 
 
-
-#%%============================================================================
-# detect faces MTCNN
-# =============================================================================
-detector = MTCNN()
-fa = FaceAligner()
-image_utils = Image_Utils()
-agender = PyAgender()
-gap_db = Gap_Db()
-
-# check if face directory exists
-if not os.path.exists(FACE_IMG_DIR):
-    os.system("mkdir -p %s"%FACE_IMG_DIR)
-
-fns = glob.glob(FAMILY_IMG_DIR)
-counter = 0
-# TODO: edit line
-for fn in fns[:10]:
-    print("\nprocessing file %s... File %s of %s"%(fn, counter, len(fns)))
-    counter += 1
+def detect_face_age_gender(fn):
+    print("\nprocessing file %s..."%fn)
 
     # check if faces already detected for the family
     family_image_name = os.path.basename(fn).split('.')[0]
     family_id = gap_db.get_family_id(family_image_name)
     if gap_db.is_face_done(family_id):
         print("Faces already detected for the family! Moving on...\n")
-        continue
+        return
     else:
         # if faces not detected for the family yet, remove previous faces for 
         # the family
@@ -174,7 +157,7 @@ for fn in fns[:10]:
     image_utils.squarify_box(faces)
     # TODO: Remove line
     #image_utils.show_key_points(img, faces)
-    face_patches = image_utils.show_face_patches(img, faces, show=True)
+    face_patches = image_utils.show_face_patches(img, faces, show=False)
 
     # align faces
     faces_aligned = fa.align(faces, img)
@@ -206,3 +189,24 @@ for fn in fns[:10]:
     for image, age, gender in zip(face_images, ages, genders):
         gap_db.update_faces(family_id, image, age, gender)
     
+
+#%%============================================================================
+# detect faces MTCNN
+# =============================================================================
+tic = time.time()
+
+detector = MTCNN()
+fa = FaceAligner()
+image_utils = Image_Utils()
+agender = PyAgender()
+gap_db = Gap_Db()
+
+# check if face directory exists
+if not os.path.exists(FACE_IMG_DIR):
+    os.system("mkdir -p %s"%FACE_IMG_DIR)
+
+fns = glob.glob(FAMILY_IMG_DIR)
+for fn in fns:
+    detect_face_age_gender(fn)
+
+print("execution succesfully finished in %.4s sec!"%int(time.time()-tic))
