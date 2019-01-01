@@ -14,13 +14,16 @@ from pyagender import PyAgender
 from gap_db import Gap_Db
 import imutils
 import time
+from config import Config
 
 
 #%%============================================================================
 # Settings
 # =============================================================================
-FAMILY_IMG_DIR = "/home/amin/projects/gap/families/*.jpg"
-FACE_IMG_DIR = "/home/amin/projects/gap/faces"
+config = Config()
+FAMILY_IMG_DIR = config.FAMILY_IMG_DIR
+FACE_IMG_DIR = config.FACE_IMG_DIR
+FACE_WIDTH = Config.FACE_WIDTH
 
 
 #%%============================================================================
@@ -69,7 +72,7 @@ class Image_Utils():
 
 class FaceAligner:
     def __init__(self, desiredLeftEye=(0.35, 0.35),
-        desiredFaceWidth=256, desiredFaceHeight=None):
+        desiredFaceWidth=FACE_WIDTH, desiredFaceHeight=None):
         # store desired output left
         # eye position, and desired output face width + height
         self.desiredLeftEye = desiredLeftEye

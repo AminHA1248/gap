@@ -25,6 +25,7 @@ def plot_ly(df, mode='lines', title=None, xaxis='date', yaxis=None, barchart=Fal
             title=xaxis
         ),
         yaxis=dict(
+            type='linear',
             title=yaxis
         ),
         bargap=0.1,
@@ -54,6 +55,10 @@ def plot_ly(df, mode='lines', title=None, xaxis='date', yaxis=None, barchart=Fal
 #%%============================================================================
 # Main
 # =============================================================================
+income_desc = """
+In this household each adult can consume goods and services worth about 27 US dollars each month. This consumption includes the things they buy as well as the things they produce for themselves (if any). We estimated this amount based on the assets the family owned and the incomes they reported. We added a small guesstimate of the food the family produced themselves to the reported incomes. The guesstimated part made up less than half of the total income, but more than a fifth.
+"""
+
 gap_db = Gap_Db()
 db = gap_db._connectiondb()
 
@@ -61,7 +66,7 @@ sql = """
     SELECT family, COUNT(face.image) AS members, income
     FROM faces AS face,
          families AS family
-    WHERE face.family=family.id
+         WHERE face.family=family.id
     GROUP BY family
     ORDER BY income
 """
@@ -73,4 +78,5 @@ df = pd.DataFrame(list(cursor.fetchall()), columns=columns)
 
 df_plot = df[['income', 'members']]
 df_plot['income'] = df_plot['income']/1000
-plot_ly(df_plot.rolling(20).mean())
+df_plot = df_plot.sort_values('income').set_index('income')
+plot_ly(df_plot.rolling(50).mean())
