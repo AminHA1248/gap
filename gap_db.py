@@ -2,8 +2,25 @@ import sys
 sys.path.append('../common')
 import tools
 import warnings
-warnings.filterwarnings("ignore")
+from config import Config
+import os
+import cv2
+import pandas as pd
+import numpy as np
+from sklearn.utils import shuffle
 
+
+#%%============================================================================
+# Settings
+# =============================================================================
+config = Config()
+warnings.filterwarnings("ignore")
+FACE_IMG_DIR = config.FACE_IMG_DIR
+
+
+#%%============================================================================
+# Helpers
+# =============================================================================
 class Gap_Db():
     def __init__(self):
         self._db = self._connectiondb()
@@ -79,3 +96,25 @@ class Gap_Db():
         else:
             is_face_done = False
         return is_face_done
+
+    def load_data(self, shuffle_data=False):
+        cursor = self._db.cursor()
+        sql = """SELECT face.image, family.income
+                 FROM faces AS face,
+                      families AS family
+                WHERE family.id=face.family"""
+        cursor.execute(sql)
+        columns = ['image', 'income']
+        df = pd.DataFrame(list(cursor.fetchall()), columns=columns)
+        labels = df['income'].values
+
+        images = []
+        for image in df['image']:
+            fn = os.path.join(FACE_IMG_DIR, image+'.jpg')
+            images.append(cv2.imread(fn))
+        images = np.array(images)
+
+        if shuffle_data:
+            images, labels = shuffle(images, labels, random_state=0)
+
+        return images, labels
