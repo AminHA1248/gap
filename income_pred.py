@@ -81,12 +81,9 @@ class IncomePred():
         return model
 
 
-    def train(self, epochs, batch_size=128):
-        # Load the dataset
-        (X, y) = self._gap_db.load_data(False)
-
-        print("converting images to embeddins...")
+    def get_encoding(self, X, y):
         tic = time.time()
+        print("converting images to embeddins...")
         X_enc = []
         y_enc = []
         for cv_img, income in tqdm(zip(X, y)):
@@ -98,16 +95,21 @@ class IncomePred():
         X_enc = np.array(X_enc)
         y_enc = np.array(y_enc).reshape(-1,1)
         print("Done in %.4s sec!"%int(time.time()-tic))
+        return X_enc, y_enc
+
+
+    def train(self, epochs, batch_size=128):
+        # Load the dataset
+        (X, y) = self._gap_db.load_data(False)
+
+        # get encodings
+        X_enc, y_enc = self.get_encoding(X, y)
 
         # startr training
         from sklearn.ensemble import RandomForestRegressor
         regr = RandomForestRegressor(n_estimators=8, n_jobs=-1, oob_score=True, random_state=124)
         regr.fit(X_enc, y_enc)
         print(regr.oob_score_)
-        print(regr.predict(X_test))
-        print(regr.score(X_train, y_train))
-        print(regr.score(X_test, y_test))
-        print(regr.feature_importances_)
 
 
         X = (X.astype(np.float32) - 127.5) / 127.5
