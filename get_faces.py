@@ -15,6 +15,7 @@ from gap_db import Gap_Db
 import imutils
 import time
 from config import Config
+from image_utils import Image_Utils
 
 
 #%%============================================================================
@@ -29,47 +30,6 @@ FACE_WIDTH = Config.FACE_WIDTH
 #%%============================================================================
 # Helpers
 # =============================================================================
-class Image_Utils():
-    def show_key_points(self, img, faces, width=10):
-        image = img.copy()
-        for face in faces:
-            key_points = face['keypoints'].values()
-            for key_point in key_points:
-                cv2.circle(image, (key_point[0], key_point[1]), width, \
-                           (0, 0, 255))
-        cv2.imshow('face', image)
-    
-    def show_face_patches(self, img, faces, show=True):
-        counter = 0
-        face_patches = []
-        for face in faces:
-            counter += 1
-            rect = face['box']
-            face_image = img[rect[1]:rect[1] + rect[3], rect[0]: rect[0] + \
-                             rect[2]]
-            face_patches.append(face_image)
-            if show:
-                cv2.imshow('face%s'%counter, face_image)
-        return face_patches
-    
-    def show_bounding_boxes(self, img, faces, width=10):
-        image = img.copy()
-        rects = [face['box'] for face in faces]
-        for rect in rects:
-            cv2.rectangle(image, (rect[0], rect[1]), (rect[0] + rect[2], \
-                          rect[1] + rect[3]), (0, 0, 255), width)
-        cv2.imshow('bounding boxes', image)
-
-    def squarify_box(self, faces):
-        for face in faces:
-            face['center'] = (int(face['box'][0] + face['box'][2]/2), 
-                              int(face['box'][1] + face['box'][3]/2))
-            sq_size = int(max(face['box'][2:])*1.8)
-            face['box'] = [max(0, int(face['center'][0] - sq_size/2)),
-                           max(0, int(face['center'][1] - sq_size/2)),
-                           sq_size,
-                           sq_size]
-
 class FaceAligner:
     def __init__(self, desiredLeftEye=(0.35, 0.35),
         desiredFaceWidth=FACE_WIDTH, desiredFaceHeight=None):

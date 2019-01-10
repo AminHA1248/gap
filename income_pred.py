@@ -18,6 +18,11 @@ from config import Config
 from gap_db import Gap_Db
 import datetime as dt
 from keras.callbacks import TensorBoard, ModelCheckpoint
+from sklearn.metrics import mean_squared_error
+import face_recognition
+from image_utils import Image_Utils
+from tqdm import tqdm
+import time
 
 
 #%%============================================================================
@@ -44,10 +49,9 @@ class IncomePred():
         # Build and compile the discriminator
         self.model = self.build_model()
 
+
     def build_model(self):
-
         model = Sequential()
-
         model.add(Conv2D(16, kernel_size=3, strides=2, input_shape=self.img_shape, padding="same"))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
@@ -76,12 +80,36 @@ class IncomePred():
 
         return model
 
-    def train(self, epochs, batch_size=128):
 
+    def train(self, epochs, batch_size=128):
         # Load the dataset
         (X, y) = self._gap_db.load_data(False)
 
-        # Configure inputs
+        print("converting images to embeddins...")
+        tic = time.time()
+        X_enc = []
+        y_enc = []
+        for cv_img, income in tqdm(zip(X, y)):
+            dlib_image = cv_img[:,:,[2,1,0]]
+            face_encs = face_recognition.face_encodings(dlib_image)
+            if len(face_encs)>0:
+                X_enc.append(face_encs[0])
+                y_enc.append(income)
+        X_enc = np.array(X_enc)
+        y_enc = np.array(y_enc).reshape(-1,1)
+        print("Done in %.4s sec!"%int(time.time()-tic))
+
+        # startr training
+        from sklearn.ensemble import RandomForestRegressor
+        regr = RandomForestRegressor(n_estimators=8, n_jobs=-1, oob_score=True, random_state=124)
+        regr.fit(X_enc, y_enc)
+        print(regr.oob_score_)
+        print(regr.predict(X_test))
+        print(regr.score(X_train, y_train))
+        print(regr.score(X_test, y_test))
+        print(regr.feature_importances_)
+
+
         X = (X.astype(np.float32) - 127.5) / 127.5
         y = np.log(y).reshape(-1, 1)
 
@@ -90,6 +118,11 @@ class IncomePred():
         y_train = y[:len_train]
         X_test = X[len_train:]
         y_test = y[len_train:]
+
+        print("\n##################################")
+        print("null Hypothesis mse for the train set is: %.5s"%mean_squared_error(np.ones(len(y_train))*y_train.mean(), y_train))
+        print("null Hypothesis mse for the test set: %.5s"%mean_squared_error(np.ones(len(y_test))*y_test.mean(), y_test))
+        print("##################################")
 
 
         logdir = "/tmp/tensorboard/" + dt.datetime.now().strftime("%Y-%m-%d-%H:%M:%S") + "/"
@@ -109,4 +142,4 @@ class IncomePred():
 # =============================================================================
 if __name__ == '__main__':
     income_pred = IncomePred()
-    income_pred.train(epochs=10, batch_size=1024)
+    income_pred.train(epochs=10, batch_size=124)
