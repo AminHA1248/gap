@@ -55,19 +55,24 @@ class IncomePred():
         model.add(Conv2D(16, kernel_size=3, strides=2, input_shape=self.img_shape, padding="same"))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
+
         model.add(Conv2D(32, kernel_size=3, strides=2, padding="same"))
         model.add(ZeroPadding2D(padding=((0,1),(0,1))))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
         model.add(BatchNormalization(momentum=0.8))
+
         model.add(Conv2D(64, kernel_size=3, strides=2, padding="same"))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
         model.add(BatchNormalization(momentum=0.8))
+
         model.add(Conv2D(128, kernel_size=3, strides=1, padding="same"))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
+
         model.add(Flatten())
+
         model.add(Dense(1))
 
         optimizer = Adam(0.0002, 0.5)
@@ -83,7 +88,7 @@ class IncomePred():
 
     def get_encoding(self, X, y):
         tic = time.time()
-        print("converting images to embeddins...")
+        print("converting images to embeddings...")
         X_enc = []
         y_enc = []
         for cv_img, income in tqdm(zip(X, y)):
@@ -144,4 +149,4 @@ class IncomePred():
 # =============================================================================
 if __name__ == '__main__':
     income_pred = IncomePred()
-    income_pred.train(epochs=10, batch_size=124)
+    income_pred.train(epochs=10, batch_size=128)

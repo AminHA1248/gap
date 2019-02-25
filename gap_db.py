@@ -118,3 +118,18 @@ class Gap_Db():
             images, labels = shuffle(images, labels, random_state=0)
 
         return images, labels
+
+    def update_incomes(self, df_income):
+        cursor = self._db.cursor()
+        sql = """SELECT name, region, lat, lng
+                 FROM countries"""
+        cursor.execute(sql)
+        columns = ['name', 'region', 'lat', 'lng']
+        df_country = pd.DataFrame(list(cursor.fetchall()), columns=columns)
+        df_merge = df_country.merge(df_income, left_on='name', right_on='name', how='left').dropna()
+        df_merge['monthly_income'] = df_merge['monthly_income'].astype(int)
+        sql = """
+        UPDATE countries SET monthly_income=%s WHERE name=%s
+        """
+        cursor.executemany(sql, df_merge[['monthly_income', 'name']].values.tolist())
+        self._db.commit()
